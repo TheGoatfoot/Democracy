@@ -218,6 +218,7 @@ impl System {
             Event::Connect(minute, second, id) => {}
             Event::Disconnect(minute, second, id) => {
                 self.ballot.unvote(&id);
+                self.ballot.decrement_voters();
             }
             Event::Chat(minute, second, id, username, message) => {
                 self.handle_message(&id, &username, &message);
