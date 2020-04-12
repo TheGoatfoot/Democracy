@@ -10,8 +10,8 @@ use std::collections::{HashMap, HashSet};
 use std::thread::sleep;
 use std::time::Duration;
 
+use clap::{crate_version, App, Arg};
 use regex::Regex;
-use clap::{Arg, App, crate_version};
 
 use ballot::{Ballot, VoteError, VoteResult};
 use console::Console;
@@ -21,88 +21,138 @@ use util::{get_maplist, get_server_info};
 
 fn main() {
     let matches = App::new("Democracy")
-    .version(crate_version!())
-    .author("Goatfoot")
-    .about("A voting plugin for Movie Battles 2")
-    .arg(Arg::with_name("maps")
-        .short("m")
-        .long("maps")
-        .value_name("MAPS")
-        .help("Sets the file that contains the map list")
-        .default_value("./maps.txt"))
-    .arg(Arg::with_name("rcon")
-        .short("r")
-        .long("rcon")
-        .value_name("RCON")
-        .help("Sets the rcon password")
-        .default_value("password"))
-    .arg(Arg::with_name("hostip")
-        .short("i")
-        .long("host-ip")
-        .value_name("HOST IP")
-        .help("Sets the host IP")
-        .default_value("127.0.0.1"))
-    .arg(Arg::with_name("hostport")
-        .short("p")
-        .long("host-port")
-        .value_name("HOST PORT")
-        .help("Sets the host port")
-        .default_value("29070"))
-    .arg(Arg::with_name("clientport")
-        .short("c")
-        .long("client-port")
-        .value_name("CLIENT PORT")
-        .help("Sets the client port")
-        .default_value("3400"))
-    .arg(Arg::with_name("log")
-        .short("l")
-        .long("log")
-        .value_name("LOG")
-        .help("Sets the game log file")
-        .default_value("./games.log"))
-    .arg(Arg::with_name("interval")
-        .short("t")
-        .long("interval")
-        .value_name("INTERVAL")
-        .help("Sets the update interval in second")
-        .default_value("1"))
-    .arg(Arg::with_name("timeout")
-        .short("o")
-        .long("timeout")
-        .value_name("TIMEOUT")
-        .help("Sets the timeout for server command in millisecond")
-        .default_value("100"))
-    .arg(Arg::with_name("votingduration")
-        .short("d")
-        .long("votingduration")
-        .value_name("VOTING DURATION")
-        .help("Sets the voting duration")
-        .default_value("30"))
-    .arg(Arg::with_name("playercooldown")
-        .short("C")
-        .long("playercooldown")
-        .value_name("PLAYER COOLDOWN")
-        .help("Sets the player cooldown")
-        .default_value("30"))
-    .arg(Arg::with_name("target")
-        .short("x")
-        .long("target")
-        .value_name("TARGET")
-        .help("Sets the voting target ratio")
-        .default_value("0.6"))
-    .get_matches();
+        .version(crate_version!())
+        .author("Goatfoot")
+        .about("A voting plugin for Movie Battles 2")
+        .arg(
+            Arg::with_name("maps")
+                .short("m")
+                .long("maps")
+                .value_name("MAPS")
+                .help("Sets the file that contains the map list")
+                .default_value("./maps.txt"),
+        )
+        .arg(
+            Arg::with_name("rcon")
+                .short("r")
+                .long("rcon")
+                .value_name("RCON")
+                .help("Sets the rcon password")
+                .default_value("password"),
+        )
+        .arg(
+            Arg::with_name("hostip")
+                .short("i")
+                .long("host-ip")
+                .value_name("HOST IP")
+                .help("Sets the host IP")
+                .default_value("127.0.0.1"),
+        )
+        .arg(
+            Arg::with_name("hostport")
+                .short("p")
+                .long("host-port")
+                .value_name("HOST PORT")
+                .help("Sets the host port")
+                .default_value("29070"),
+        )
+        .arg(
+            Arg::with_name("clientport")
+                .short("c")
+                .long("client-port")
+                .value_name("CLIENT PORT")
+                .help("Sets the client port")
+                .default_value("3400"),
+        )
+        .arg(
+            Arg::with_name("log")
+                .short("l")
+                .long("log")
+                .value_name("LOG")
+                .help("Sets the game log file")
+                .default_value("./games.log"),
+        )
+        .arg(
+            Arg::with_name("interval")
+                .short("t")
+                .long("interval")
+                .value_name("INTERVAL")
+                .help("Sets the update interval in second")
+                .default_value("1"),
+        )
+        .arg(
+            Arg::with_name("timeout")
+                .short("o")
+                .long("timeout")
+                .value_name("TIMEOUT")
+                .help("Sets the timeout for server command in millisecond")
+                .default_value("100"),
+        )
+        .arg(
+            Arg::with_name("votingduration")
+                .short("d")
+                .long("votingduration")
+                .value_name("VOTING DURATION")
+                .help("Sets the voting duration")
+                .default_value("30"),
+        )
+        .arg(
+            Arg::with_name("playercooldown")
+                .short("C")
+                .long("playercooldown")
+                .value_name("PLAYER COOLDOWN")
+                .help("Sets the player cooldown")
+                .default_value("30"),
+        )
+        .arg(
+            Arg::with_name("target")
+                .short("x")
+                .long("target")
+                .value_name("TARGET")
+                .help("Sets the voting target ratio")
+                .default_value("0.6"),
+        )
+        .get_matches();
 
     let maps = matches.value_of("maps").unwrap_or_default();
     let rcon = matches.value_of("rcon").unwrap_or_default();
     let hostip = matches.value_of("hostip").unwrap_or_default();
-    let hostport: u16 = matches.value_of("hostport").unwrap_or_default().parse().expect("cannot read host port");
-    let clientport: u16 = matches.value_of("clientport").unwrap_or_default().parse().expect("cannot read client port");
+    let hostport: u16 = matches
+        .value_of("hostport")
+        .unwrap_or_default()
+        .parse()
+        .expect("cannot read host port");
+    let clientport: u16 = matches
+        .value_of("clientport")
+        .unwrap_or_default()
+        .parse()
+        .expect("cannot read client port");
     let log = matches.value_of("log").unwrap_or_default();
-    let interval: u64 = matches.value_of("interval").unwrap_or_default().parse().expect("cannot read interval");
-    let timeout: u64 = matches.value_of("timeout").unwrap_or_default().parse().expect("cannot read timeour");
-    let voting_duration: u64 = matches.value_of("votingduration").unwrap_or_default().parse().expect("cannot read interval");
-    let player_cooldown: u64 = matches.value_of("playercooldown").unwrap_or_default().parse().expect("cannot read timeout");
-    let target: f32 = matches.value_of("target").unwrap_or_default().parse().expect("cannot read target");
+    let interval: u64 = matches
+        .value_of("interval")
+        .unwrap_or_default()
+        .parse()
+        .expect("cannot read interval");
+    let timeout: u64 = matches
+        .value_of("timeout")
+        .unwrap_or_default()
+        .parse()
+        .expect("cannot read timeour");
+    let voting_duration: u64 = matches
+        .value_of("votingduration")
+        .unwrap_or_default()
+        .parse()
+        .expect("cannot read interval");
+    let player_cooldown: u64 = matches
+        .value_of("playercooldown")
+        .unwrap_or_default()
+        .parse()
+        .expect("cannot read timeout");
+    let target: f32 = matches
+        .value_of("target")
+        .unwrap_or_default()
+        .parse()
+        .expect("cannot read target");
 
     let mut scanner = Scanner::new(log);
     let console = Console::new(
@@ -135,6 +185,7 @@ fn main() {
         for event in scanner.events() {
             system.handle_event(event);
         }
+        system.check_vote_result(true);
         sleep(Duration::from_secs(interval));
     }
 }
@@ -160,14 +211,13 @@ impl System {
 
     pub fn handle_event(&mut self, event: Event) {
         match event {
-            Event::Init(minute, second) => {}
-            Event::Shutdown(minute, second) => {}
-            Event::Connect(minute, second, id) => {
-                self.ballot.increment_voters();
+            Event::Init(minute, second) => {
+                self.refresh_player_count();
             }
+            Event::Shutdown(minute, second) => {}
+            Event::Connect(minute, second, id) => {}
             Event::Disconnect(minute, second, id) => {
                 self.ballot.unvote(&id);
-                self.ballot.decrement_voters();
             }
             Event::Chat(minute, second, id, username, message) => {
                 self.handle_message(&id, &username, &message);
@@ -209,6 +259,11 @@ impl System {
         }
     }
 
+    fn refresh_player_count(&mut self) {
+        self.ballot
+            .set_voters(get_server_info(&mut self.console).unwrap());
+    }
+
     fn handle_message(&mut self, id: &String, username: &String, message: &String) {
         match REGEX_CHAT_PROPOSE.captures(message) {
             Some(captures) => {
@@ -224,8 +279,7 @@ impl System {
                     .to_owned();
                 match self.ballot.start_voting(id, &r#type, &input) {
                     Ok(_) => {
-                        self.ballot
-                            .set_voters(get_server_info(&mut self.console).unwrap());
+                        self.refresh_player_count();
                         self.console
                             .svsay(
                                 &[
@@ -252,7 +306,13 @@ impl System {
                     Err(error) => match error {
                         VoteError::Cooldown(duration) => {
                             self.console
-                                .svsay(format!("User '{}' is in cooldown for {:.2} second!", username, duration).as_bytes())
+                                .svsay(
+                                    format!(
+                                        "User '{}' is in cooldown for {:.2} second!",
+                                        username, duration
+                                    )
+                                    .as_bytes(),
+                                )
                                 .unwrap();
                         }
                         VoteError::Progress => {
