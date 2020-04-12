@@ -11,6 +11,7 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use regex::Regex;
+use clap::{Arg, App, crate_version};
 
 use ballot::{Ballot, VoteError, VoteResult};
 use console::Console;
@@ -19,18 +20,102 @@ use scanner::{Event, Scanner};
 use util::{get_maplist, get_server_info};
 
 fn main() {
-    let mut scanner = Scanner::new("C:/Users/Rania/Documents/My Games/OpenJK/MBII/games.log");
+    let matches = App::new("Democracy")
+    .version(crate_version!())
+    .author("Goatfoot")
+    .about("A voting plugin for Movie Battles 2")
+    .arg(Arg::with_name("maps")
+        .short("m")
+        .long("maps")
+        .value_name("MAPS")
+        .help("Sets the file that contains the map list")
+        .default_value("./maps.txt"))
+    .arg(Arg::with_name("rcon")
+        .short("r")
+        .long("rcon")
+        .value_name("RCON")
+        .help("Sets the rcon password")
+        .default_value("password"))
+    .arg(Arg::with_name("hostip")
+        .short("i")
+        .long("host-ip")
+        .value_name("HOST IP")
+        .help("Sets the host IP")
+        .default_value("127.0.0.1"))
+    .arg(Arg::with_name("hostport")
+        .short("p")
+        .long("host-port")
+        .value_name("HOST PORT")
+        .help("Sets the host port")
+        .default_value("29070"))
+    .arg(Arg::with_name("clientport")
+        .short("c")
+        .long("client-port")
+        .value_name("CLIENT PORT")
+        .help("Sets the client port")
+        .default_value("3400"))
+    .arg(Arg::with_name("log")
+        .short("l")
+        .long("log")
+        .value_name("LOG")
+        .help("Sets the game log file")
+        .default_value("./games.log"))
+    .arg(Arg::with_name("interval")
+        .short("t")
+        .long("interval")
+        .value_name("INTERVAL")
+        .help("Sets the update interval in second")
+        .default_value("1"))
+    .arg(Arg::with_name("timeout")
+        .short("o")
+        .long("timeout")
+        .value_name("TIMEOUT")
+        .help("Sets the timeout for server command in millisecond")
+        .default_value("100"))
+    .arg(Arg::with_name("votingduration")
+        .short("d")
+        .long("votingduration")
+        .value_name("VOTING DURATION")
+        .help("Sets the voting duration")
+        .default_value("30"))
+    .arg(Arg::with_name("playercooldown")
+        .short("C")
+        .long("playercooldown")
+        .value_name("PLAYER COOLDOWN")
+        .help("Sets the player cooldown")
+        .default_value("30"))
+    .arg(Arg::with_name("target")
+        .short("x")
+        .long("target")
+        .value_name("TARGET")
+        .help("Sets the voting target ratio")
+        .default_value("0.6"))
+    .get_matches();
+
+    let maps = matches.value_of("maps").unwrap_or_default();
+    let rcon = matches.value_of("rcon").unwrap_or_default();
+    let hostip = matches.value_of("hostip").unwrap_or_default();
+    let hostport: u16 = matches.value_of("hostport").unwrap_or_default().parse().expect("cannot read host port");
+    let clientport: u16 = matches.value_of("clientport").unwrap_or_default().parse().expect("cannot read client port");
+    let log = matches.value_of("log").unwrap_or_default();
+    let interval: u64 = matches.value_of("interval").unwrap_or_default().parse().expect("cannot read interval");
+    let timeout: u64 = matches.value_of("timeout").unwrap_or_default().parse().expect("cannot read timeour");
+    let voting_duration: u64 = matches.value_of("votingduration").unwrap_or_default().parse().expect("cannot read interval");
+    let player_cooldown: u64 = matches.value_of("playercooldown").unwrap_or_default().parse().expect("cannot read timeout");
+    let target: f32 = matches.value_of("target").unwrap_or_default().parse().expect("cannot read target");
+
+    let mut scanner = Scanner::new(log);
     let console = Console::new(
-        "heererer".to_owned(),
-        "127.0.0.1",
-        29070,
-        3400,
-        Duration::from_millis(100),
+        rcon.to_owned(),
+        hostip,
+        hostport,
+        clientport,
+        Duration::from_millis(timeout),
     );
     let mut nominations = HashMap::new();
     nominations.insert(
         "map".to_owned(),
-        get_maplist("./maps.txt").expect("can't find map list"),
+        get_maplist(maps).expect("can't find map list"),
     );
     let mut modes = HashSet::new();
     modes.insert("0".to_owned());
@@ -40,9 +125,9 @@ fn main() {
     modes.insert("4".to_owned());
     nominations.insert("mode".to_owned(), modes);
     let ballot = Ballot::new(
-        Duration::from_secs(30),
-        Duration::from_secs(30),
-        0.6,
+        Duration::from_secs(voting_duration),
+        Duration::from_secs(player_cooldown),
+        target,
         nominations,
     );
     let mut system = System::new(console, ballot);
@@ -50,8 +135,7 @@ fn main() {
         for event in scanner.events() {
             system.handle_event(event);
         }
-        system.check_vote_result(false, false);
-        sleep(Duration::from_secs(1));
+        sleep(Duration::from_secs(interval));
     }
 }
 
