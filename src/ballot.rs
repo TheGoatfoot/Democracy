@@ -133,40 +133,36 @@ impl Ballot {
         let voters_nay = self.voters - voters_yay;
         (voters_yay, if voters_nay == 0 { 1 } else { voters_nay })
     }
-    pub fn get_result(
-        &self,
-        ignore_cooldown: bool,
-        majority_result: bool,
-    ) -> Result<VoteResult, VoteError> {
+    pub fn get_result(&self, majority_result: bool) -> Result<VoteResult, VoteError> {
         if !self.voting {
             return Err(VoteError::Progress);
         }
         if self.voters == 0 {
             return Err(VoteError::Voters);
         }
-        if self.voting_duration.is_in_cooldown() && !ignore_cooldown {
-            return Err(VoteError::Cooldown(
-                self.voting_duration.get_remaining_time(),
-            ));
-        }
         let (yay, nay) = self.get_requirements();
         match majority_result {
-            true => {
-                if self.yays > self.nays {
+            true => match self.voting_duration.is_in_cooldown() {
+                true => Err(VoteError::Cooldown(
+                    self.voting_duration.get_remaining_time(),
+                )),
+                false => {
+                    if self.yays > self.nays {
+                        Ok(VoteResult::Yay(self.r#type.clone(), self.proposed.clone()))
+                    } else if self.nays > self.yays {
+                        Ok(VoteResult::Nay)
+                    } else {
+                        Ok(VoteResult::None)
+                    }
+                }
+            },
+            false => {
+                if self.yays >= yay {
                     Ok(VoteResult::Yay(self.r#type.clone(), self.proposed.clone()))
-                } else if self.nays > self.yays {
+                } else if self.nays >= nay {
                     Ok(VoteResult::Nay)
                 } else {
                     Err(VoteError::Progress)
-                }
-            }
-            false => {
-                if self.yays > yay {
-                    Ok(VoteResult::Yay(self.r#type.clone(), self.proposed.clone()))
-                } else if self.nays > nay {
-                    Ok(VoteResult::Nay)
-                } else {
-                    Ok(VoteResult::None)
                 }
             }
         }

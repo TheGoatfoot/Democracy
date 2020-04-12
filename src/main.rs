@@ -175,8 +175,8 @@ impl System {
         }
     }
 
-    pub fn check_vote_result(&mut self, ignore_cooldown: bool, majority_result: bool) {
-        match self.ballot.get_result(ignore_cooldown, majority_result) {
+    pub fn check_vote_result(&mut self, majority_result: bool) {
+        match self.ballot.get_result(majority_result) {
             Ok(result) => {
                 match result {
                     VoteResult::Yay(r#type, input) => {
@@ -247,7 +247,7 @@ impl System {
                             .svsay(format!("{} nay vote(s) needed to deny", nay).as_bytes())
                             .unwrap();
                         self.ballot.vote(id, true);
-                        self.check_vote_result(true, true);
+                        self.check_vote_result(false);
                     }
                     Err(error) => match error {
                         VoteError::Cooldown(duration) => {
@@ -284,7 +284,7 @@ impl System {
                 } {
                     Ok(_) => {
                         self.print_requirements();
-                        self.check_vote_result(true, true);
+                        self.check_vote_result(false);
                     }
                     Err(_) => {}
                 };
