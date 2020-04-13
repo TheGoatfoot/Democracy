@@ -6,14 +6,14 @@ use std::io::prelude::*;
 use std::io::BufReader;
 
 lazy_static! {
-    static ref REGEX_INIT: Regex = Regex::new(r#"^ *(?P<minute>[0-9]+):(?P<second>[0-9]{2}) InitGame:"#).unwrap();
-    static ref REGEX_SHUTDOWN: Regex = Regex::new(r#"^ *(?P<minute>[0-9]+):(?P<second>[0-9]{2}) ShutdownGame:"#).unwrap();
+    static ref REGEX_INIT: Regex = Regex::new(r#"^ *(?P<minute>[0-9]+):(?P<second>[0-9]{2}) *InitGame:"#).unwrap();
+    static ref REGEX_SHUTDOWN: Regex = Regex::new(r#"^ *(?P<minute>[0-9]+):(?P<second>[0-9]{2}) *ShutdownGame:"#).unwrap();
     static ref REGEX_CONNECT: Regex =
-        Regex::new(r#"^ *(?P<minute>[0-9]+):(?P<second>[0-9]{2}) ClientConnect: (?P<id>[0-9]{1,2})"#).unwrap();
+        Regex::new(r#"^ *(?P<minute>[0-9]+):(?P<second>[0-9]{2}) *ClientConnect: (?P<id>[0-9]{1,2})"#).unwrap();
     static ref REGEX_DISCONNECT: Regex =
-        Regex::new(r#"^ *(?P<minute>[0-9]+):(?P<second>[0-9]{2}) ClientDisconnect: (?P<id>[0-9]{1,2})"#).unwrap();
+        Regex::new(r#"^ *(?P<minute>[0-9]+):(?P<second>[0-9]{2}) *ClientDisconnect: (?P<id>[0-9]{1,2})"#).unwrap();
     static ref REGEX_CHAT: Regex = Regex::new(
-        r#"^ *(?P<minute>[0-9]+):(?P<second>[0-9]{2}) (?P<id>[0-9]{1,2}): say: (?P<username>.*): "(?P<message>.*)""#
+        r#"^ *(?P<minute>[0-9]+):(?P<second>[0-9]{2}) *(?P<id>[0-9]{1,2}): say: (?P<username>.*): "(?P<message>.*)""#
     )
     .unwrap();
 }
